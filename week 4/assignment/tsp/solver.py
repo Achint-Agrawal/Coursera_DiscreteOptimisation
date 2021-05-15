@@ -32,23 +32,20 @@ def twoLargest(a):      #returns index of two largest numbers in a
 
 def swapEdges(s, i, j):
     if(i>j):
-        s = np.append(s, s[0:i])
-        s = s[i:]
-        return swapEdges(s, 0, nodeCount - i + j)
-    # print(s)
+        i,j = j,i
+    i = i+1
+    j = j+1
+    s[i:j] = np.flip(s[i:j])
     return s
 
 def changeInF(s, i, j):
-    if(i==nodeCount):
-        i = 0
-    if(j == nodeCount):
-        j = 0
-    initial = d[s[i-1]][s[i]] + d[s[j-1]][s[j]]
-    final = d[s[i-1]][s[j-1]] + d[s[i]][s[j]]
+
+    s = np.append(s, s[0])
+    initial = d[s[i+1]][s[i]] + d[s[j+1]][s[j]]
+    final = d[s[i]][s[j]] + d[s[i+1]][s[j+1]]
     return final-initial
 
 def findDist(s):
-    # print(d, s)
     dist = np.array([d[s[i]][s[i+1]] for i in range(nodeCount-1)])
     dist = np.append(dist, d[s[nodeCount-1]][s[0]])
     return dist
@@ -56,7 +53,6 @@ def findDist(s):
 class f:
     def distanceSum(s):
         obj = d[s[-1]][s[0]]
-        # print(s)
         for index in range(0, nodeCount-1):
             obj += d[s[index]][s[index+1]]
         return obj
@@ -66,55 +62,44 @@ class N:
         x, y = random.sample(range(0, nodeCount), 2)
     
     def twoOpt_biggest2edges(s):
-        # print('s=', s)
         dist = findDist(s)
-        # print('dist = ', dist)
         x, y = twoLargest(dist)
         x =x[0]
         y = y[0]
         if(len(x) < 2):
             x = np.append(x, y)
-        # print('x = ', x)
         Ns = np.empty((0, nodeCount), dtype=int)
         fn = np.array([])
         for i in range(len(x)):
-            for j in range(i+2, len(x)):
-                # print(x[i], x[j])
-                n = swapEdges(s, i, j)
-                # print('n=', n)
-                fn = np.append(fn, f.distanceSum(s) + changeInF(s, x[i], x[j]))
-                Ns = np.append(Ns, np.expand_dims(n, axis = 0), axis = 0)
-        # print(Ns, fn)
+            for j in range(i+1, len(x)):
+                if(abs(x[i] - x[j]) != 1):
+                    s2 = np.copy(s)
+                    n = swapEdges(s2, x[i], x[j])
+                    
+                    fn = np.append(fn, f.distanceSum(s) + changeInF(s, x[i], x[j]))
+                    Ns = np.append(Ns, np.expand_dims(n, axis = 0), axis = 0)
+                    if(abs(f.distanceSum(n) - fn[-1]) > 0.001):
+                        print(s, n, x[i], x[j], f.distanceSum(s), f.distanceSum(n), fn[-1])
+        # print(d)
         return Ns,fn
 
     def twoOpt_all(s):
-        # print('s=', s)
         x = np.array(range(nodeCount))
         Ns = np.empty((0, nodeCount), dtype=int)
         fn = np.array([])
         for i in range(len(x)):
             for j in range(i+2, len(x)):
-                # print(x[i], x[j])
                 n = swapEdges(s, x[i], x[j])
-                # print('n=', n)
+                
                 fn = np.append(fn, f.distanceSum(s) + changeInF(s, x[i], x[j]))
                 Ns = np.append(Ns, np.expand_dims(n, axis = 0), axis = 0)
-        # print(Ns, fn)
         return Ns,fn
 
 class L:
     def greedy(N, s):
-        # legal = np.empty((0, nodeCount))
         fs = f.distanceSum(s)
-        # print(N, s)
         Ns, fs_ = N
-        # for i in range(Ns.shape[0]):
-        #     if(Ns[i][0] < fs):
-        #         legal = np.append(legal, np.expand_dims(Ns[i][1], axis = 0), axis = 0)
-        # return legal
-
         x = np.where(fs_ <= fs)
-        # print('L', Ns[x], fs_[x])
         return Ns[x], fs_[x]
 
 class S:
@@ -131,20 +116,19 @@ class InitialSolution:
 
 class Search:
     def local(f, N, L, S):
-        s = InitialSolution.random()
-        # s = np.array([3, 2, 1, 0, 4])
-        # print(s)
+        # s = np.array([4, 0, 2, 1, 3])
+        s= InitialSolution.random()
         s_best = s
         fs_best = f(s_best)
         for k in range(MAX_TRIALS):
             s = S(L(N(s),s),s)
+            
             if(s == None):
                 break
             s, fs = s
-            # print(s, fs)
             if(fs<fs_best):
                 fs_best = fs
-                s_best = S
+                s_best = s
         return s_best, fs_best
 
     def iteratedLocal(fd, N, L, S):
@@ -162,15 +146,24 @@ class Search:
 def solve_it(input_data):
     # Modify this code to run your optimization algorithm
 
-    # print('Input- \n', input_data)
+    # print(input_data)
+    # f = open('input.txt', 'w')
+    # f.write(input_data)
+    # f.close()
 
     # parse the input
+    global points
+    global nodeCount
+    global d
+    points = []
+    nodeCount = 0
+    d = [[]]
+
     lines = input_data.split('\n')
 
-    global nodeCount
     nodeCount = int(lines[0])
 
-    global points
+    
     for i in range(1, nodeCount+1):
         line = lines[i]
         parts = line.split()
@@ -190,7 +183,12 @@ def solve_it(input_data):
 
     # prepare the solution in the specified output format
     output_data = '%.2f' % obj + ' ' + str(0) + '\n'
+    # output_data = 0
+    
+
     output_data += ' '.join(map(str, solution))
+
+    # print(obj, f.distanceSum(solution))
 
     return output_data
 
@@ -202,5 +200,6 @@ if __name__ == '__main__':
         with open(file_location, 'r') as input_data_file:
             input_data = input_data_file.read()
         print(solve_it(input_data))
+        # solve_it(input_data)
     else:
         print('This test requires an input file.  Please select one from the data directory. (i.e. python solver.py ./data/tsp_51_1)')
