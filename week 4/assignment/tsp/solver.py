@@ -8,18 +8,19 @@ import random
 import numpy as np
 
 MAX_TRIALS = 1000
-MAX_SEARCHES = 100
+MAX_SEARCHES = 10
 
 Point = namedtuple("Point", ['x', 'y'])
 points = []
 nodeCount = 0
-d = [[]]
+# d = [[]]
 
-def buildDistanceMatrix():
-    def length(point1, point2):
-        return math.sqrt((point1.x - point2.x)**2 + (point1.y - point2.y)**2)
-    global d
-    d = np.asarray([[length(points[i], points[j]) for i in range(nodeCount)] for j in range(nodeCount)])
+
+def length(point1, point2):
+    return math.sqrt((point1.x - point2.x)**2 + (point1.y - point2.y)**2)
+
+def d(i, j):
+    return length(points[i], points[j])
 
 def twoLargest(a):      #returns index of two largest numbers in a
     c = a
@@ -41,20 +42,20 @@ def swapEdges(s, i, j):
 def changeInF(s, i, j):
 
     s = np.append(s, s[0])
-    initial = d[s[i+1]][s[i]] + d[s[j+1]][s[j]]
-    final = d[s[i]][s[j]] + d[s[i+1]][s[j+1]]
+    initial = d(s[i+1], s[i]) + d(s[j+1], s[j])
+    final = d(s[i], s[j]) + d(s[i+1],s[j+1])
     return final-initial
 
 def findDist(s):
-    dist = np.array([d[s[i]][s[i+1]] for i in range(nodeCount-1)])
-    dist = np.append(dist, d[s[nodeCount-1]][s[0]])
+    dist = np.array([d(s[i], s[i+1]) for i in range(nodeCount-1)])
+    dist = np.append(dist, d(s[nodeCount-1], s[0]))
     return dist
 
 class f:
     def distanceSum(s):
-        obj = d[s[-1]][s[0]]
+        obj = d(s[-1],s[0])
         for index in range(0, nodeCount-1):
-            obj += d[s[index]][s[index+1]]
+            obj += d(s[index], s[index+1])
         return obj
 
 class N:
@@ -136,7 +137,7 @@ class Search:
         s_best, f_best = s, f
         for i in range(MAX_SEARCHES):
             s, f = Search.local(fd, N, L, S)
-            print(f)
+            # print(f)
             if(f<f_best):
                 f_best = f
                 s_best = s
@@ -154,10 +155,8 @@ def solve_it(input_data):
     # parse the input
     global points
     global nodeCount
-    global d
     points = []
     nodeCount = 0
-    d = [[]]
 
     lines = input_data.split('\n')
 
@@ -168,7 +167,7 @@ def solve_it(input_data):
         line = lines[i]
         parts = line.split()
         points.append(Point(float(parts[0]), float(parts[1])))
-    buildDistanceMatrix()
+    # buildDistanceMatrix()
 
     # build a trivial solution
     # visit the nodes in the order they appear in the file
@@ -178,15 +177,15 @@ def solve_it(input_data):
     # obj = f.distanceSum(solution)
 
     # solution, obj = Search.local(f.distanceSum, N.twoOpt_biggest2edges, L.greedy, S.random)
-    # solution, obj = Search.iteratedLocal(f.distanceSum, N.twoOpt_biggest2edges, L.greedy, S.random)
+    solution, obj = Search.iteratedLocal(f.distanceSum, N.twoOpt_biggest2edges, L.greedy, S.random)
     # solution, obj = Search.iteratedLocal(f.distanceSum, N.twoOpt_all, L.greedy, S.random)
 
     # prepare the solution in the specified output format
-    # output_data = '%.2f' % obj + ' ' + str(0) + '\n'
-    output_data = 0
+    output_data = '%.2f' % obj + ' ' + str(0) + '\n'
+    # output_data = 0
     
 
-    # output_data += ' '.join(map(str, solution))
+    output_data += ' '.join(map(str, solution))
 
     # print(obj, f.distanceSum(solution))
 
