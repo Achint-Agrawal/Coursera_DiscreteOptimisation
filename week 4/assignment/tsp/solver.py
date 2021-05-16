@@ -57,6 +57,10 @@ class f:
         return obj
 
 
+def metropolisDecision(fs, fn, t):
+    probability = math.exp((fs-fn)/t)
+    return random.random() < probability
+
 class N:
     def twoOpt_random(s):
         x, y = random.sample(range(0, nodeCount), 2)
@@ -165,6 +169,24 @@ class S:
         sol = s
         sol = swapEdges(sol, Ls[index][0], Ls[index][1])
         return sol, fs[index]
+    
+    def metropolis(t, L, s):
+        Ls, fs = L
+        if(Ls.shape[0] == 0):
+            return None
+        index = np.random.randint(0, Ls.shape[0])   
+        sol = s
+        n = swapEdges(sol, Ls[index][0], Ls[index][1])
+        fn = fs[index]
+        fi = f.distanceSum(s)
+        if(fn<fi):
+            return n, fn
+        else:
+            if(metropolisDecision(fi, fn, t)):
+                return n, fn
+            else:
+                return s, fi
+
 
 class InitialSolution:
     def random():
