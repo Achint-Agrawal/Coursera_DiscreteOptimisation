@@ -66,21 +66,19 @@ class N:
         x, y = twoLargest(dist)
         x =x[0]
         y = y[0]
-        if(len(x) < 2):
-            x = np.append(x, y)
-        Ns = np.empty((0, nodeCount), dtype=int)
+        # if(len(x) < 2):
+        x = np.append(x, y)
+        Ns = np.empty((0, 2), dtype=int)
         fn = np.array([])
         for i in range(len(x)):
             for j in range(i+1, len(x)):
                 if(abs(x[i] - x[j]) != 1):
-                    s2 = np.copy(s)
-                    n = swapEdges(s2, x[i], x[j])
+                    # s2 = np.copy(s)
+                    # n = swapEdges(s2, x[i], x[j])
                     
                     fn = np.append(fn, f.distanceSum(s) + changeInF(s, x[i], x[j]))
-                    Ns = np.append(Ns, np.expand_dims(n, axis = 0), axis = 0)
-                    if(abs(f.distanceSum(n) - fn[-1]) > 0.001):
-                        print(s, n, x[i], x[j], f.distanceSum(s), f.distanceSum(n), fn[-1])
-        # print(d)
+                    # Ns = np.append(Ns, np.expand_dims(n, axis = 0), axis = 0)
+                    Ns = np.append(Ns, np.array([[x[i], x[j]]]), axis = 0)
         return Ns,fn
 
     def twoOpt_all(s):
@@ -108,7 +106,9 @@ class S:
         if(Ls.shape[0] == 0):
             return None
         index = np.random.randint(0, Ls.shape[0])
-        return Ls[index], fs[index]
+        sol = s
+        sol = swapEdges(sol, Ls[index][0], Ls[index][1])
+        return sol, fs[index]
 
 class InitialSolution:
     def random():
@@ -136,7 +136,7 @@ class Search:
         s_best, f_best = s, f
         for i in range(MAX_SEARCHES):
             s, f = Search.local(fd, N, L, S)
-            # print(f)
+            print(f)
             if(f<f_best):
                 f_best = f
                 s_best = s
@@ -147,7 +147,7 @@ def solve_it(input_data):
     # Modify this code to run your optimization algorithm
 
     # print(input_data)
-    # f = open('input.txt', 'w')
+    # f = open('input2.txt', 'w')
     # f.write(input_data)
     # f.close()
 
@@ -178,15 +178,15 @@ def solve_it(input_data):
     # obj = f.distanceSum(solution)
 
     # solution, obj = Search.local(f.distanceSum, N.twoOpt_biggest2edges, L.greedy, S.random)
-    solution, obj = Search.iteratedLocal(f.distanceSum, N.twoOpt_biggest2edges, L.greedy, S.random)
+    # solution, obj = Search.iteratedLocal(f.distanceSum, N.twoOpt_biggest2edges, L.greedy, S.random)
     # solution, obj = Search.iteratedLocal(f.distanceSum, N.twoOpt_all, L.greedy, S.random)
 
     # prepare the solution in the specified output format
-    output_data = '%.2f' % obj + ' ' + str(0) + '\n'
-    # output_data = 0
+    # output_data = '%.2f' % obj + ' ' + str(0) + '\n'
+    output_data = 0
     
 
-    output_data += ' '.join(map(str, solution))
+    # output_data += ' '.join(map(str, solution))
 
     # print(obj, f.distanceSum(solution))
 
@@ -199,6 +199,7 @@ if __name__ == '__main__':
         file_location = sys.argv[1].strip()
         with open(file_location, 'r') as input_data_file:
             input_data = input_data_file.read()
+        
         print(solve_it(input_data))
         # solve_it(input_data)
     else:
