@@ -57,9 +57,7 @@ class f:
         return obj
 
 
-def metropolisDecision(fs, fn, t):
-    probability = math.exp((fs-fn)/t)
-    return random.random() < probability
+
 
 class N:
     def twoOpt_random(s):
@@ -122,7 +120,7 @@ class N:
         return Ns,fn
 
     def twoOpt_random_k(s):
-        k = min(nodeCount, 50)
+        k = min(nodeCount, 10)
         x = random.sample(range(0, nodeCount), k)
         # x = np.array(range(0, k))
 
@@ -145,6 +143,9 @@ class L:
         Ns, fs_ = N
         x = np.where(fs_ <= fs)
         return Ns[x], fs_[x]
+    
+    def all(N, s):
+        return N
 
 class S:
     def random(L, s):
@@ -170,22 +171,31 @@ class S:
         sol = swapEdges(sol, Ls[index][0], Ls[index][1])
         return sol, fs[index]
     
-    def metropolis(t, L, s):
-        Ls, fs = L
-        if(Ls.shape[0] == 0):
-            return None
-        index = np.random.randint(0, Ls.shape[0])   
-        sol = s
-        n = swapEdges(sol, Ls[index][0], Ls[index][1])
-        fn = fs[index]
-        fi = f.distanceSum(s)
-        if(fn<fi):
-            return n, fn
-        else:
-            if(metropolisDecision(fi, fn, t)):
+    def metropolis(t):
+        def func(t, L, s):
+            def metropolisDecision(fs, fn, t):
+                probability = math.exp((fs-fn)/t)
+                return random.random() < probability
+            Ls, fs = L
+            if(Ls.shape[0] == 0):
+                return None
+            index = np.random.randint(0, Ls.shape[0])   
+            sol = s
+            n = swapEdges(sol, Ls[index][0], Ls[index][1])
+            fn = fs[index]
+            fi = f.distanceSum(s)
+            if(fn<fi):
                 return n, fn
             else:
-                return s, fi
+                if(metropolisDecision(fi, fn, t)):
+                    return n, fn
+                else:
+                    return s, fi
+
+            
+        
+        return lambda L,s:func(t, L, s)
+
 
 
 class InitialSolution:
@@ -195,10 +205,9 @@ class InitialSolution:
         return(np.array(range(nodeCount)))
 
 class Search:
-    def local(f, N, L, S, initialSolution):
+    def local(f, N, L, S, s):
         # s = np.array([4, 0, 2, 1, 3])
         # s= InitialSolution.random()
-        s = initialSolution()
         s_best = s
         fs_best = f(s_best)
         for k in range(MAX_TRIALS):
@@ -212,29 +221,54 @@ class Search:
                 s_best = s
         return s_best, fs_best
 
-    def iteratedLocal(fd, N, L, S, initialSolution):
-        s, f = Search.local(fd, N, L, S, initialSolution)
+    def iteratedLocal(fd, N, L, S, s):
+        s, f = Search.local(fd, N, L, S, S())
         s_best, f_best = s, f
         for i in range(MAX_SEARCHES):
-            s, f = Search.local(fd, N, L, S, initialSolution)
+            s, f = Search.local(fd, N, L, S, s)
             print(f)
             if(f<f_best):
                 f_best = f
                 s_best = s
         return s_best, f_best
 
-    def iteratedLocal_objective(fd, N, L, S, initialSolution):
-        s, f = Search.local(fd, N, L, S, initialSolution)
+    def iteratedLocal_objective(fd, N, L, S, s):
+        s, f = Search.local(fd, N, L, S, s)
         s_best, f_best = s, f
         print(f)
         print(f_best, getObjective())
         while(f_best > getObjective()):
-            s, f = Search.local(fd, N, L, S, initialSolution)
+            s, f = Search.local(fd, N, L, S, s)
             print(f)
             if(f<f_best):
                 f_best = f
                 s_best = s
         return s_best, f_best
+
+    def simulatedAnnealing(f, N):
+        def initTemperature(s, fs):
+            return fs
+        
+        def updateTemperature(s, fs, t):
+            return alpha*t
+
+        s = InitialSolution.random()
+        fs_init = f(s)
+        t = initTemperature(s, fs_init)
+        s_best = s
+        fs_best = fs_init
+        alpha = pow(0.01/t, 1/MAX_SEARCHES)
+        print(fs_best)
+        for k in range(MAX_SEARCHES):
+            s, fs = Search.local(f, N, L.all, S.metropolis(t), s)
+            print(fs)
+            if(fs<fs_best):
+                fs_best = fs
+                s_best = s
+            t = updateTemperature(s, fs, t)
+        return s_best, fs_best
+
+        
 
 
 def initializeObjectives():
@@ -302,11 +336,12 @@ def solve_it(input_data):
     # solution, obj = Search.iteratedLocal(f.distanceSum, N.twoOpt_all, L.greedy, S.best, InitialSolution.random)
     # solution, obj = Search.iteratedLocal(f.distanceSum, N.twoOpt_biggest2edges, L.greedy, S.best, InitialSolution.random)
 
-    if(nodeCount < 500):
-        solution, obj = Search.iteratedLocal_objective(f.distanceSum, N.twoOpt_random_k, L.greedy, S.best, InitialSolution.random)
-    else:
-        solution, obj = Search.iteratedLocal(f.distanceSum, N.twoOpt_biggest2edges, L.greedy, S.best, InitialSolution.random)
+    # if(nodeCount < 500):
+    #     solution, obj = Search.iteratedLocal_objective(f.distanceSum, N.twoOpt_random_k, L.greedy, S.best, InitialSolution.random)
+    # else:
+    #     solution, obj = Search.iteratedLocal(f.distanceSum, N.twoOpt_biggest2edges, L.greedy, S.best, InitialSolution.random)
 
+    solution, obj = Search.simulatedAnnealing(f.distanceSum, N.twoOpt_random_k)
 
 
     # prepare the solution in the specified output format
