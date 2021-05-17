@@ -33,13 +33,16 @@ def cp1(node_count, edge_count, edges):
 def cp2(node_count): 
     #fixing first available color
     global neighbours
+    # sort by the number of neighbours
     order = sorted(range(len(neighbours)), key=lambda k: len(neighbours[k]), reverse=True)
-    minreq = 1
+    minreq = 1      #min no of colors required
     colors = [-1 for _ in range(node_count)]
     colors[order[0]] = 0
 
     for node in order[1:]:
-        D = set(range(node_count))
+        D = set(range(node_count)) #all possible colors
+        
+        #remove colors already assigned to neighbours of node
         for neighbour in neighbours[node]:
             D.discard(colors[neighbour])
         
@@ -58,10 +61,12 @@ def cp3_x(node_count, order):
         for neighbour in neighbours[node]:
             D.discard(colors[neighbour])
         
+        #consider a pool of colors instead of one color
         pool = [min(D)]
         # print(D)
         for d in D:
             # print(d, minreq, pool[0])
+            #if color no. is less than 1+whatever is assigned till now, it is considered in pool
             if(d<=minreq+1 & d!=pool[0]):
                 pool.append(d)
             else:
@@ -76,7 +81,7 @@ def cp3_x(node_count, order):
 def cp3(node_count):
     #cp2 but some randomisation
 
-     #fixing first available color
+    #fixing first available color
     global neighbours
     order = sorted(range(len(neighbours)), key=lambda k: len(neighbours[k]), reverse=True)
     targets = {20:5, 50:8, 70:20, 100:21, 250:95, 500:18, 1000:124}
@@ -112,7 +117,7 @@ def solve_it(input_data):
         parts = line.split()
         edges.append((int(parts[0]), int(parts[1])))
 
-    #using constraint programming
+    #generate matrix of neighbours
     generate_neighbours(node_count, edges)
 
     solution = cp3(node_count)
